@@ -5,7 +5,7 @@ path <- fs::path("","Volumes","Peres_Research", "K99_R00", "Image analysis data"
 library(targets)
 
 # Comfig
-tar_option_set(packages = c("readr")) # Package needed to run pipeline without importing them
+tar_option_set(packages = c("readr", "tidyverse")) # Package needed to run pipeline without importing them
 
 
 # Run pipeline aka used to be the plan.R with drake
@@ -19,6 +19,11 @@ list(
   tar_target(
     raw_data,
     read_csv(raw_data_file, col_types = cols())
+  ),
+  tar_target(
+    data,
+    raw_data %>%
+      select(Cell_Type, stageLocalized)
   )
 )
 
