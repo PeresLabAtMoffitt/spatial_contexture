@@ -85,8 +85,20 @@ list(
 )
 
 
-# tar_make() #### NOT RUN in script but must be run in the console
-# tar_load(ROI_overall_bivariate) #### NOT RUN in script but must be run in the console
+# tar_make() #### can NOT RUN in script, must be run in the console
+
+# tar_load(ROI_overall_bivariate) #### can NOT RUN in script, must be run in the console
+# tar_load(ROI_stroma_bivariate)
+# tar_load(ROI_stroma_univariate)
+# tar_load(ROI_tumor_bivariate)
+# tar_load(ROI_tumor_univariate)
+# 
+# tar_load(K_ROI_overall_bivariate)
+# tar_load(K_ROI_overall_univariate)
+# tar_load(K_ROI_stroma_bivariate)
+# tar_load(K_ROI_stroma_univariate)
+# tar_load(K_ROI_tumor_bivariate)
+# tar_load(K_ROI_tumor_univariate)
 
 # drake_clean =
 # tar_destroy()
