@@ -18,70 +18,69 @@ list(
   # ),
   tar_target(
     ROI_overall_bivariate,
-    read_csv(paste0(path,
-                    "/Nearest Neighbor/ROI_overall_bivariate.csv"), col_types = cols()) %>%#________________
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    ROI_stroma_bivariate,
-    read_csv(paste0(path,
-                    "/Nearest Neighbor/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, anchor : ncol(.))
-  ),
-  tar_target(
-    ROI_stroma_univariate,
-    read_csv(paste0(path,
-                    "/Nearest Neighbor/ROI_stroma_univariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    ROI_tumor_bivariate,
-    read_csv(paste0(path,
-                    "/Nearest Neighbor/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, anchor : ncol(.))
-  ),
-  tar_target(
-    ROI_tumor_univariate,
-    read_csv(paste0(path,
-                    "/Nearest Neighbor/ROI_tumor_univariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    K_ROI_overall_bivariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_overall_bivariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    K_ROI_overall_univariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_overall_univariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    K_ROI_stroma_bivariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, anchor : ncol(.))
-  ),
-  tar_target(
-    K_ROI_stroma_univariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_stroma_univariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  ),
-  tar_target(
-    K_ROI_tumor_bivariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, anchor : ncol(.))
-  ),
-  tar_target(
-    K_ROI_tumor_univariate,
-    read_csv(paste0(path,
-                    "/Ripley_K/ROI_tumor_univariate.csv"), col_types = cols()) %>%
-      select(suid, slide_type, image.tag, Marker : ncol(.))
-  )
+    read_rds(paste0(path,
+                    "/Alex/computed/AACES_ROI2/CD3_fixed_AACES_ROI2_overall_mif.rds"))[["derived"]][["bivariate_NN"]]# %>%#________________[["derived"]][["bivariate_NN"]]
+  )#,
+  # tar_target(
+  #   ROI_stroma_bivariate,
+  #   read_csv(paste0(path,
+  #                   "/Nearest Neighbor/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, anchor : ncol(.))
+  # ),
+  # tar_target(
+  #   ROI_stroma_univariate,
+  #   read_csv(paste0(path,
+  #                   "/Nearest Neighbor/ROI_stroma_univariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # ),
+  # tar_target(
+  #   ROI_tumor_bivariate,
+  #   read_csv(paste0(path,
+  #                   "/Nearest Neighbor/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, anchor : ncol(.))
+  # ),
+  # tar_target(
+  #   ROI_tumor_univariate,
+  #   read_csv(paste0(path,
+  #                   "/Nearest Neighbor/ROI_tumor_univariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_overall_bivariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_overall_bivariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_overall_univariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_overall_univariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_stroma_bivariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, anchor : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_stroma_univariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_stroma_univariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_tumor_bivariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, anchor : ncol(.))
+  # ),
+  # tar_target(
+  #   K_ROI_tumor_univariate,
+  #   read_csv(paste0(path,
+  #                   "/Ripley_K/ROI_tumor_univariate.csv"), col_types = cols()) %>%
+  #     select(suid, slide_type, image.tag, Marker : ncol(.))
+  # )
 )
 
 
@@ -101,4 +100,4 @@ list(
 # tar_load(K_ROI_tumor_univariate)
 
 # drake_clean =
-# tar_destroy()
+# tar_destroy(destroy = "local")
