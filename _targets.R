@@ -1,7 +1,8 @@
 # Create path
-path <- fs::path("","Volumes","Peres_Research", "K99_R00", "Image analysis data", "Spatial Data")
+path <- fs::path("","Volumes","Peres_Research", "K99_R00", "Image analysis data", "Spatial Data",
+                 "Alex", "computed", "AACES_ROI2")
 
-# Load package
+# Import package
 library(targets)
 
 # Comfig
@@ -10,94 +11,111 @@ tar_option_set(packages = c("readr", "tidyverse")) # Package needed to run pipel
 
 # Run pipeline aka used to be the plan.R with drake
 list(
-  # tar_target(
-  #   raw_data_file,
-  #   paste0(path,
-  #   "/op.csv"),
-  #   format = "file"
-  # ),
   tar_target(
-    ROI_overall_bivariate,
+    KNN_ROI_overall_bivariate,
     read_rds(paste0(path,
-                    "/Alex/computed/AACES_ROI2/CD3_fixed_AACES_ROI2_overall_mif.rds"))[["derived"]][["bivariate_NN"]]# %>%#________________[["derived"]][["bivariate_NN"]]
-  )#,
-  # tar_target(
-  #   ROI_stroma_bivariate,
-  #   read_csv(paste0(path,
-  #                   "/Nearest Neighbor/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, anchor : ncol(.))
-  # ),
-  # tar_target(
-  #   ROI_stroma_univariate,
-  #   read_csv(paste0(path,
-  #                   "/Nearest Neighbor/ROI_stroma_univariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # ),
-  # tar_target(
-  #   ROI_tumor_bivariate,
-  #   read_csv(paste0(path,
-  #                   "/Nearest Neighbor/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, anchor : ncol(.))
-  # ),
-  # tar_target(
-  #   ROI_tumor_univariate,
-  #   read_csv(paste0(path,
-  #                   "/Nearest Neighbor/ROI_tumor_univariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_overall_bivariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_overall_bivariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_overall_univariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_overall_univariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_stroma_bivariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_stroma_bivariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, anchor : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_stroma_univariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_stroma_univariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_tumor_bivariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_tumor_bivariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, anchor : ncol(.))
-  # ),
-  # tar_target(
-  #   K_ROI_tumor_univariate,
-  #   read_csv(paste0(path,
-  #                   "/Ripley_K/ROI_tumor_univariate.csv"), col_types = cols()) %>%
-  #     select(suid, slide_type, image.tag, Marker : ncol(.))
-  # )
+                    c("/CD3_fixed_AACES_ROI2_overall_mif.rds")))[["derived"]][["bivariate_NN"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted G", "Observed G",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    KNN_ROI_overall_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_overall_mif.rds")))[["derived"]][["univariate_NN"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted CSR", "Observed",
+             "Degree of Clustering Theoretical", "Degree of Clustering Permutation")
+  ),
+  tar_target(
+    C_ROI_overall_bivariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_overall_mif.rds")))[["derived"]][["bivariate_Count"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    C_ROI_overall_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_overall_mif.rds")))[["derived"]][["univariate_Count"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    KNN_ROI_stroma_bivariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_stroma_mif.rds")))[["derived"]][["bivariate_NN"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted G", "Observed G",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    KNN_ROI_stroma_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_stroma_mif.rds")))[["derived"]][["univariate_NN"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted CSR", "Observed",
+             "Degree of Clustering Theoretical", "Degree of Clustering Permutation")
+  ),
+  tar_target(
+    C_ROI_stroma_bivariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_stroma_mif.rds")))[["derived"]][["bivariate_Count"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    C_ROI_stroma_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_stroma_mif.rds")))[["derived"]][["univariate_Count"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    KNN_ROI_tumor_bivariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_tumor_mif.rds")))[["derived"]][["bivariate_NN"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted G", "Observed G",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    KNN_ROI_tumor_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_tumor_mif.rds")))[["derived"]][["univariate_NN"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted CSR", "Observed",
+             "Degree of Clustering Theoretical", "Degree of Clustering Permutation")
+  ),
+  tar_target(
+    C_ROI_tumor_bivariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_tumor_mif.rds")))[["derived"]][["bivariate_Count"]] %>%
+      select("Image Location", "anchor", "counted", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  ),
+  tar_target(
+    C_ROI_tumor_univariate,
+    read_rds(paste0(path,
+                    c("/CD3_fixed_AACES_ROI2_tumor_mif.rds")))[["derived"]][["univariate_Count"]] %>%
+      select("Image Location", "Marker", "r",
+             "Theoretical CSR", "Permuted K", "Observed K",
+             "Degree of Clustering Permutation", "Degree of Clustering Theoretical")
+  )
 )
 
 
 # tar_make() #### can NOT RUN in script, must be run in the console
 
-# tar_load(ROI_overall_bivariate) #### can NOT RUN in script, must be run in the console
-# tar_load(ROI_stroma_bivariate)
-# tar_load(ROI_stroma_univariate)
-# tar_load(ROI_tumor_bivariate)
-# tar_load(ROI_tumor_univariate)
-# 
-# tar_load(K_ROI_overall_bivariate)
-# tar_load(K_ROI_overall_univariate)
-# tar_load(K_ROI_stroma_bivariate)
-# tar_load(K_ROI_stroma_univariate)
-# tar_load(K_ROI_tumor_bivariate)
-# tar_load(K_ROI_tumor_univariate)
+# tar_load(KNN_ROI_overall_bivariate)
+# tar_load(KNN_ROI_overall_univariate)
+# tar_load(C_ROI_overall_bivariate)
+# tar_load(C_ROI_overall_univariate)
 
 # drake_clean =
 # tar_destroy(destroy = "local")
