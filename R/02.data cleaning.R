@@ -1,11 +1,12 @@
 # Import library
 library(tidyverse)
 
+
+# tar_load(K_ROI_tumor_bivariate)
 ################################################# II ### Data cleaning
 
 # script for K data. will create function later
 
-# tar_load(K_ROI_tumor_bivariate)
 
 bivariate_k <- K_ROI_tumor_bivariate %>% 
   # Bind compartment data
