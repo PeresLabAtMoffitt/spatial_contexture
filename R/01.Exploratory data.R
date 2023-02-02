@@ -4,13 +4,14 @@ library(tidyverse)
 
 # Load data
 tar_load(KNN_ROI_overall_bivariate)
-tar_load(KNN_ROI_overall_univariate)
-tar_load(C_ROI_overall_bivariate)
-tar_load(C_ROI_overall_univariate)
+# tar_load(KNN_ROI_overall_univariate)
+# tar_load(C_ROI_overall_bivariate)
+# tar_load(C_ROI_overall_univariate)
 
 KNN_ROI_overall_bivariate <- KNN_ROI_overall_bivariate %>% 
   janitor::clean_names() %>% 
   ungroup() %>% 
+  mutate(across(where(is.numeric), ~ na_if(., "NaN"))) %>% 
   mutate(image_tag = str_match(image_location, "Analysis Images.(.*?).tif")[,2],
          image_tag = str_replace(image_tag, "16-", "16")) %>% 
   mutate(suid = str_match(image_tag,
@@ -18,37 +19,36 @@ KNN_ROI_overall_bivariate <- KNN_ROI_overall_bivariate %>%
          .before = 1) %>%
   select(-image_location)
 
-KNN_ROI_overall_bivariate <- KNN_ROI_overall_bivariate %>% 
-  filter(r == 50 & anchor != "DAPI (DAPI) Positive") %>% 
-  select(-r)
 
-
-# ICC
+########################################################################### I ### ICC
+# Let's choose r = 50 for now
 df <- KNN_ROI_overall_bivariate %>% 
-  as.data.frame(.)
-
-"theoretical_csr"                  "permuted_g"                      
-[7] "observed_g"                       "degree_of_clustering_permutation" "degree_of_clustering_theoretical"
+  filter(r == 50 & anchor != "DAPI (DAPI) Positive") %>% 
+  select(-r) %>% 
+  as.data.frame()
 
 library(psych)
-
+vec_col <- c("theoretical_csr", "permuted_g")
+ICCC_data <- data.frame(matrix(nrow = 1, ncol = 0))
+ICC_data <- data.frame(matrix(nrow = 1, ncol = 0))
+lb_data <- data.frame(matrix(nrow = 1, ncol = 0))
+up_data <- data.frame(matrix(nrow = 1, ncol = 0))
 fct_icc <- function(data) {
-  ICC_data <- data.frame(matrix(nrow = 1, ncol = 0))
-  lb_data <- data.frame(matrix(nrow = 1, ncol = 0))
-  up_data <- data.frame(matrix(nrow = 1, ncol = 0))
-  for (i in 1:length(colnames(data))) {
+  for (i in vec_col) {
     rad <- data %>% select(suid, anchor, counted)
     
     if (class(data[, i]) == "numeric" |
         class(data[, i]) == "integer") {
-      ICC_df <- cbind(rad, value = data[, i])
+      ICC_df <- cbind(rad, value = data[, i]) %>%
+        drop_na() %>%
+        filter(anchor == "CD3 (Opal 650) Positive" & counted == "CD3+ CD8+")
       ICC_df <- ICC_df %>%
         mutate(Slide = "Slide0") %>%
         group_by(suid) %>%
         mutate(n = row_number(suid)) %>%
         ungroup() %>%
         unite(slide_id, Slide:n, sep = "", remove = TRUE, na.rm = TRUE) %>%
-        pivot_wider(id_cols = -c(anchor, counted), 
+        pivot_wider(id_cols = -c(anchor, counted),
                     names_from = slide_id, values_from = value) %>%
         select(c(starts_with("slide")))
       
@@ -58,47 +58,45 @@ fct_icc <- function(data) {
       lb_data <- cbind(lb_data, ICC)
       ICC <- ICC(ICC_df)$results[4, 8]
       up_data <- cbind(up_data, ICC)
+      
     }
   }
   ICCC_data <- bind_rows(ICC_data, lb_data, up_data)
-  colnames(ICCC_data) <- colnames(data)[6:ncol(data)-1]
+  colnames(ICCC_data) <- vec_col
   ICCC_data <- as.data.frame(t(ICCC_data)) %>%
-    mutate(ICC_lb_up = paste(round(V1, 2), " (", round(V2, 2), ", ", round(V3, 2), ")", sep = "")) %>%
+    mutate(ICC_lb_up = 
+             paste(round(V1, 2), " (", 
+                   round(V2, 2), ", ", 
+                   round(V3, 2), ")", sep = "")) %>%
     select(ICC_lb_up)
 }
-
-dat <- fct_icc(df)
-dat
-
-
+ICC_results <- fct_icc(df)
+ICC_results
+rm(ICC_data, ICCC_data, lb_data, up_data, df, ICC_results)
 
 
-
-
-
-
-
-########### NEXT can summarize########### 
-# Let's choose 50 for now
+########################################################################### II ### Summarize
+# Because ICC is good, we can summarize slides measurement by suid, anchor, counted
 
 KNN_ROI_overall_bivariate <- KNN_ROI_overall_bivariate %>% 
-  group_by(suid, anchor, counted) %>% 
+  group_by(suid, anchor, counted, r) %>% 
   summarize(theoretical_csr = mean(theoretical_csr, na.rm=TRUE),
             permuted_g = mean(permuted_g, na.rm=TRUE),
             observed_g = mean(observed_g, na.rm=TRUE),
             degree_of_clustering_permutation = mean(degree_of_clustering_permutation, na.rm=TRUE),
             degree_of_clustering_theoretical = mean(degree_of_clustering_theoretical, na.rm=TRUE)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(across(where(is.numeric), ~ na_if(., "NaN")))
 
 
-
-
-# Data exploratory
-
+########################################################################### III ### Data exploratory
 table(KNN_ROI_overall_bivariate$r)
 # Why do we not have more r? Should have 10, 20, 30, etc
 # Why do we see so little cells CD3, it should be more than CD11
 
+
+KNN_ROI_overall_bivariate <- KNN_ROI_overall_bivariate %>% 
+  filter(anchor != "DAPI (DAPI) Positive")
 is.na(KNN_ROI_overall_bivariate$degree_of_clustering_permutation)
 
 ########### CHOOSE R ########### 
@@ -112,13 +110,13 @@ KNN_ROI_overall_bivariate %>%
   geom_point()
 
 KNN_ROI_overall_bivariate %>% 
-  ggplot(aes(x= r, y= degree_of_clustering_permutation, color= image_tag))+
+  ggplot(aes(x= r, y= degree_of_clustering_permutation, color= suid))+
   geom_line()+ 
   theme(legend.position = "none")
 
 KNN_ROI_overall_bivariate %>% 
   filter(!is.na(degree_of_clustering_permutation)) %>% 
-  pivot_wider(id_cols = c(image_tag, anchor, counted), 
+  pivot_wider(id_cols = c(suid, anchor, counted), 
               names_from = r, 
               values_from = degree_of_clustering_permutation) %>% 
   mutate(count_change = round(abs(`100`) - abs(`50`), 2)) %>% 
@@ -130,10 +128,10 @@ KNN_ROI_overall_bivariate %>%
 
 KNN_ROI_overall_bivariate %>% 
   filter(!is.na(degree_of_clustering_permutation)) %>% 
-  group_by(image_tag, anchor, counted) %>% 
+  group_by(suid, anchor, counted) %>% 
   mutate(n = n()) %>% 
   filter(n == 2) %>% 
-  ggplot(aes(x= r, y= degree_of_clustering_permutation, color= image_tag, group = image_tag))+
+  ggplot(aes(x= r, y= degree_of_clustering_permutation, color= suid, group = suid))+
   geom_line()+
   ggtitle("Ex: CD8 better radius at 50")+
   theme_classic()+
@@ -141,10 +139,10 @@ KNN_ROI_overall_bivariate %>%
   theme(legend.position = "none")
 
 KNN_ROI_overall_bivariate[23:24,] %>% 
-  ggplot(aes(x= r, y= degree_of_clustering_permutation), color= image_tag)+
+  ggplot(aes(x= r, y= degree_of_clustering_permutation), color= suid)+
   geom_line()
 KNN_ROI_overall_bivariate[239:240,] %>% 
-  ggplot(aes(x= r, y= degree_of_clustering_permutation), color= image_tag)+
+  ggplot(aes(x= r, y= degree_of_clustering_permutation), color= suid)+
   geom_line()
 
 KNN_ROI_overall_bivariate %>% 
