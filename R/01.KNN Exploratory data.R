@@ -112,11 +112,11 @@ lb_data <- data.frame(matrix(nrow = 1, ncol = 0))
 up_data <- data.frame(matrix(nrow = 1, ncol = 0))
 fct_icc <- function(data) {
   for (i in vec_col) {
-    rad <- data %>% select(suid, anchor, counted)
+    raw_df <- data %>% select(suid, anchor, counted)
     
     if (class(data[, i]) == "numeric" |
         class(data[, i]) == "integer") {
-      ICC_df <- cbind(rad, value = data[, i]) %>%
+      ICC_df <- cbind(raw_df, value = data[, i]) %>%
         drop_na() %>%
         filter(anchor == "CD3 (Opal 650) Positive" & counted == "CD3+ CD8+")
       ICC_df <- ICC_df %>%
@@ -255,7 +255,7 @@ KNN_ROI_overall_bivariate_final
 tbl1 <- KNN_ROI_overall_bivariate_final %>% 
   select(vitalstatus, timelastfu,
          CD11_vs_CD11CD15_grp,
-         refage, stage) %>%
+         refage, race, stage) %>%
   tbl_uvregression(method = survival::coxph,
                    y = (Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
                              event = KNN_ROI_overall_bivariate_final$vitalstatus)),
@@ -284,7 +284,7 @@ tbl_merge(list(tbl1, tbl2, tbl3), tab_spanner = c("**Univariable**", "**Multivar
 tbl1 <- KNN_ROI_overall_bivariate_final %>% 
   select(vitalstatus, timelastfu,
          CD3_vs_CD3CD8_grp,
-         refage, stage) %>%
+         refage, race, stage) %>%
   tbl_uvregression(method = survival::coxph,
                    y = (Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
                              event = KNN_ROI_overall_bivariate_final$vitalstatus)),
