@@ -2,6 +2,7 @@
 library(targets)
 library(tidyverse)
 library(gtsummary)
+library(survival)
 library(survminer)
 
 # Load data
