@@ -208,11 +208,11 @@ KNN_ROI_overall_bivariate6 <- KNN_ROI_overall_bivariate5 %>%
 KNN_ROI_overall_bivariate7 <- KNN_ROI_overall_bivariate5 %>% 
   filter(marker == "CD3 (Opal 650) Positive") %>% 
   mutate(tertile = ntile(theoretical_csr_i, 2)) %>% 
-  mutate(CD3_vs_CD3CD8_grp = case_when(
+  mutate(spat_CD3_i = case_when(
     tertile == 1                                          ~ "Low",
     tertile == 2                                          ~ "High"
-  ), CD3_vs_CD3CD8_grp = factor(CD3_vs_CD3CD8_grp, levels = c("Low","High"))) %>% 
-  select(suid, marker, CD3_vs_CD3CD8_grp)
+  ), spat_CD3_i = factor(spat_CD3_i, levels = c("Low","High"))) %>% 
+  select(suid, marker, spat_CD3_i)
 
 KNN_ROI_overall_bivariate_final <- KNN_ROI_overall_bivariate5 %>% 
   full_join(KNN_ROI_overall_bivariate6, ., 
@@ -220,20 +220,90 @@ KNN_ROI_overall_bivariate_final <- KNN_ROI_overall_bivariate5 %>%
   full_join(KNN_ROI_overall_bivariate7, .,
             by= c("suid", "marker"))
 
-
-
-
-
-
-
-
-
-
-
-
+library(ggridges)
+KNN_ROI_overall_bivariate_final %>% 
+  select(spat_CD3_i, marker, theoretical_csr_i) %>% 
+  # filter(!is.na(clusters_all_IandP)) %>% 
+  # select(clusters_all_IandP, 
+  #        percent_CD3 = percent_CD3_tumor.i, 
+  #        percent_CD3_CD8 = percent_CD3_CD8_tumor.i, 
+  #        percent_CD3_FoxP3 = percent_CD3_FoxP3_tumor.i, 
+  #        percent_CD11b = percent_CD11b_tumor.i, 
+  #        percent_CD11b_CD15 = percent_CD11b_CD15_tumor.i) %>% 
+  # pivot_longer(-clusters_all_IandP, names_to = "markers", values_to = "value") %>% 
+  mutate(location = "Tumor") %>% 
+  # bind_rows(., b) %>% 
+  
+  ggplot(aes(y=spat_CD3_i, x=theoretical_csr_i,  fill=marker#, linetype = location
+             )) +
+  geom_density_ridges(alpha=0.5) +
+  ggtitle("Intratumoral")+
+  theme_ridges()+ facet_wrap(.~ marker)
+  # theme(axis.text.y = element_blank(),
+  #       panel.spacing = unit(0.1, "lines"),
+  #       strip.text.x = element_text(size = 8)
+  # )
 
 
 ########################################################################### VI ### Survival
+tbl1 <- KNN_ROI_overall_bivariate_final %>% 
+  select(vitalstatus, timelastfu,
+         spat_CD11_i,
+         refage, race, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
+                             event = KNN_ROI_overall_bivariate_final$vitalstatus)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+tbl2 <-
+  coxph(Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
+             event = KNN_ROI_overall_bivariate_final$vitalstatus) ~
+          spat_CD11_i + refage + stage,
+        data =  KNN_ROI_overall_bivariate_final) %>%
+  tbl_regression(exponentiate = TRUE) %>%
+  bold_p(t = .05) %>%
+  add_nevent(location = "level") %>% add_n(location = "level")
+# tbl3 <- KNN_ROI_overall_bivariate_final %>% filter(!is.na(spat_CD11_i))
+# tbl3 <- 
+#   coxph(Surv(time = tbl3$timelastfu,
+#              event = tbl3$vitalstatus) ~
+#           theoretical_csr_i + refage + stage,
+#         data =  tbl3) %>%
+#   tbl_regression(exponentiate = TRUE) %>%
+#   bold_p(t = .05) %>%
+#   add_nevent(location = "level") %>% add_n(location = "level")
+tbl_merge(list(tbl1, tbl2), tab_spanner = c("**Univariable**", "**Multivariable**"))
+
+tbl1 <- KNN_ROI_overall_bivariate_final %>% 
+  select(vitalstatus, timelastfu,
+         spat_CD3_i,
+         refage, race, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
+                             event = KNN_ROI_overall_bivariate_final$vitalstatus)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+tbl2 <-
+  coxph(Surv(time = KNN_ROI_overall_bivariate_final$timelastfu,
+             event = KNN_ROI_overall_bivariate_final$vitalstatus) ~
+          spat_CD3_i + refage + stage,
+        data =  KNN_ROI_overall_bivariate_final) %>%
+  tbl_regression(exponentiate = TRUE) %>%
+  bold_p(t = .05) %>%
+  add_nevent(location = "level") %>% add_n(location = "level")
+# tbl3 <- KNN_ROI_overall_bivariate_final %>% filter(!is.na(spat_CD3_i))
+# tbl3 <- 
+#   coxph(Surv(time = tbl3$timelastfu,
+#              event = tbl3$vitalstatus) ~
+#           theoretical_csr_i + refage + stage,
+#         data =  tbl3) %>%
+#   tbl_regression(exponentiate = TRUE) %>%
+#   bold_p(t = .05) %>%
+#   add_nevent(location = "level") %>% add_n(location = "level")
+tbl_merge(list(tbl1, tbl2), tab_spanner = c("**Univariable**", "**Multivariable**"))
+
 
 
 
