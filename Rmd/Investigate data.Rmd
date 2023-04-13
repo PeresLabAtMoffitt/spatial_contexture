@@ -1,5 +1,5 @@
 ---
-title: "Investigate spatial contexture data"
+title: "Investigate Univariate Spatial Contexture"
 author: "Christelle Colin-Leitzinger"
 date: '`r Sys.Date()`'
 output: 
@@ -31,22 +31,42 @@ knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
                       message = FALSE,
                       cache = FALSE,
-                      # fig.width = 7, fig.height = 5, 
-                      fig.align='center'#, fig.show='hold'
+                      fig.align='center'
                       )
-options(gtsummary.print_engine = "gt")
-options(gtsummary.as_gt.addl_cmds = "gt::tab_options(table.font.size = 14, data_row.padding = gt::px(1))")
 ```
+
+<style>
+div.blue { background-color:#0099CC; border-radius: 5px; padding: 20px; font-size: 38px}
+</style>
+<div class = "blue">
+
+<span style="color: white;">Univariate Ripley's K</span>
+
+</div>
+<br>
 
 ```{r library}
 library(tidyverse)
 library(ggplot2)
 library(gtsummary)
+
+theme_gtsummary_compact()
+theme_set(theme_classic())
 ```
 
 ```{r}
-bivariate_k <- read_rds("/Users/colinccm/Documents/GitHub/Peres/spatial_contexture/bivariate_k.rds")
+markers_clinical <- read_rds("/Users/colinccm/Documents/GitHub/Peres/spatial_contexture/summarized_markers_clinical_ROI_04132023.rds")
+markers_ROI <- markers_clinical %>% 
+  drop_na(pair_id) %>% 
+  group_by(pair_id) %>% 
+  mutate(have_a_match = dense_rank(interaction(suid, pair_id))) %>% 
+  group_by(pair_id) %>% 
+  mutate(is_paired = max(have_a_match)) %>% 
+  filter(is_paired == 2) %>% 
+  select(pair_id, everything(), -c(is_paired, have_a_match)) %>% 
+  ungroup()
 
+bivariate_k <- read_rds("/Users/colinccm/Documents/GitHub/Peres/spatial_contexture/bivariate_k.rds")
 ```
 
 # Data control - ICC?
