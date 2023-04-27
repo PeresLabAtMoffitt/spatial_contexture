@@ -1,49 +1,16 @@
 # Import package
-library(targets)
 library(tidyverse)
 library(gtsummary)
 library(survival)
 library(survminer)
 
 # Load data
-tar_load(KNN_ROI1_overall_univariate)
-# tar_load(C_ROI_overall_univariate)
-tar_load(C_ROI1_overall_univariate)
+KNN_ROI1_overall_univariate <- 
+  read_rds("~/Documents/GitHub/Peres/spatial_contexture/knn_ROI1_overall_univariate.rds")
+markers <- 
+  read_rds("~/Documents/GitHub/Peres/spatial_contexture/complete_AACES_NCOCS_batch1_2_07072022.rds")
 
-# KNN_ROI1_overall_univariate1 <- KNN_ROI1_overall_univariate %>% 
-#   janitor::clean_names() %>% 
-#   ungroup() %>%
-#   mutate(across(where(is.numeric), ~ na_if(., NaN)))
-# 
-# KNN_ROI1_overall_univariate2 <- KNN_ROI1_overall_univariate1 %>% 
-#   mutate(image_tag = str_match(image_location, "Analysis Images.(.*?)$")[,2],
-#          image_tag = str_replace(image_tag, "16-", "16")) %>% 
-#   mutate(suid = str_match(image_tag,
-#                           "(L.Peres_P1_OV|L.Peres_P1_)([:digit:]*)")[,3],
-#          .before = 1) %>%
-#   select(-image_location)
-
-clean_data <- function(data) {
-  data <- data %>% 
-  janitor::clean_names() %>% 
-  ungroup() %>%
-  mutate(across(where(is.numeric), ~ na_if(., NaN))) %>% 
-    mutate(image_tag = str_match(image_location, "Analysis Images.(.*?)$")[,2],
-           image_tag = str_replace(image_tag, "16-", "16")) %>% 
-    mutate(suid = str_match(image_tag,
-                            "(Peres_P1_OV|Peres_P1_)([:digit:]*)")[,3],
-           .before = 1) %>%
-    select(-image_location)
-}
-
-KNN_ROI1_overall_univariate <- clean_data(KNN_ROI1_overall_univariate)
-write_rds(KNN_ROI1_overall_univariate, "knn_ROI1_overall_univariate.rds")
-
-C_ROI1_overall_univariate <- clean_data(C_ROI1_overall_univariate)
-write_rds(C_ROI1_overall_univariate, "c_ROI1_overall_univariate.rds")
-
-markers <- readRDS("~/Documents/GitHub/Peres/spatial_contexture/complete_AACES_NCOCS_batch1_2_07072022.rds")
-
+# Merge data
 markers <- markers %>% 
   select(image_tag, suid, annotation, slide_type, site, data_version)
 
