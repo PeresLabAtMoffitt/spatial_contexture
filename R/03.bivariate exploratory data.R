@@ -15,6 +15,7 @@ markers <- markers %>%
   select(image_tag, suid, annotation, slide_type, site, data_version)
 
 KNN_ROI1_overall_bivariate3 <- KNN_ROI1_overall_bivariate %>% 
+  filter(r == 125 | r == 150) %>% 
   left_join(., markers %>% 
               mutate(is_in_abundance = "Abundance"), 
             by= c("image_tag", "suid"))

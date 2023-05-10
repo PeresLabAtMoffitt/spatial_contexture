@@ -33,6 +33,12 @@ clean_data <- function(data) {
       count_number_in_ids == 5 &
         str_detect(suid, "3....")      ~ paste0("1", suid)
     )) %>% 
+    # Fix image tag
+    mutate(image_tag = case_when(
+      str_detect(image_tag, "Peres_P1_3") &
+        str_detect(suid, "^1")             ~ str_replace(image_tag, "Peres_P1_3", "Peres_P1_13"),
+      TRUE   ~ image_tag
+    )) %>% 
     select(-c(image_location, count_number_in_ids))
 }
 
