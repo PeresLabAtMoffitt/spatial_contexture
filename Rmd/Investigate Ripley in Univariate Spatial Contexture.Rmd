@@ -192,7 +192,7 @@ rm(ICC_data, lb_data, up_data, a, b, c,
 
 # Explore data
 
-```{r}
+```{r summarize data}
 ripley_ROI1_overall_univariate4 <- ripley_ROI1_overall_univariate3 %>% 
   group_by(suid, marker, annotation) %>% 
   summarize(theoretical_csr = mean(theoretical_csr, na.rm=TRUE),
@@ -216,13 +216,10 @@ ripley_ROI1_overall_univariate5 <-
             ripley_ROI1_overall_univariate_peri,
             by= c("suid", "marker"),
             suffix = c("_i", "_p"))
+```
 
 
-########################################################################### IV ### Data exploratory
-# Why do we see so little cells CD3, it should be more than CD11
-
-# is.na(ripley_ROI1_overall_univariate4$degree_of_clustering_permutation_i)
-
+```{r explore summarize data}
 ripley_ROI1_overall_univariate4 %>% 
   ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= marker))+
   geom_boxplot()+
@@ -276,28 +273,156 @@ tbl_stack(list(tbl1, tbl2, tbl3, tbl4, tbl5))
 
 # Add Abundance Categories / Spatial Categories
 
-```{r add abundance cat}
-abundance_cat <- readRDS("~/Documents/GitHub/Peres/spatial_contexture/summarized_markers_clinical_ROI_04132023.rds") %>% 
-  mutate(vitalstatus = case_when(
-    vitalstatus == "Deceased"                ~ 1,
-    vitalstatus == "Alive"                   ~ 0
-  )) %>% 
-  select(suid, 
-         vitalstatus, timelastfu,
-         refage, race, stage, 
-         cd3_tumor_i : immunoscore_2018lancet_patients)
+```{r load abundance }
+abundance_cat <- markers_clinical
 
 abundance_cat1 <- abundance_cat %>% 
-  select(suid, 
-         timelastfu,
-         refage,
-         contains("total")) %>% 
-  pivot_longer(cols = c(contains("total")), 
+  
+  mutate(cd3_tumor.i = case_when(
+    tumor_percent_cd3_i <= 1      ~ "low",
+    tumor_percent_cd3_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_tumor.i = case_when(
+    tumor_percent_cd3plus_cd8plus_i <= 1      ~ "low",
+    tumor_percent_cd3plus_cd8plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_tumor.i = case_when(
+    tumor_percent_cd3plus_foxp3plus_i <= 1      ~ "low",
+    tumor_percent_cd3plus_foxp3plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd11b_tumor.i = case_when(
+    tumor_percent_cd11b_i == 0      ~ "Absence",
+    tumor_percent_cd11b_i > 0       ~ "Presence"
+  )) %>% 
+  mutate(cd11bplus_cd15plus_tumor.i = case_when(
+    tumor_percent_cd11bplus_cd15plus_i == 0      ~ "Absence",
+    tumor_percent_cd11bplus_cd15plus_i > 0       ~ "Presence"
+  )) %>% 
+  
+  mutate(cd3_stroma.i = case_when(
+    stroma_percent_cd3_i <= 1      ~ "low",
+    stroma_percent_cd3_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_stroma.i = case_when(
+    stroma_percent_cd3plus_cd8plus_i <= 1      ~ "low",
+    stroma_percent_cd3plus_cd8plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_stroma.i = case_when(
+    stroma_percent_cd3plus_foxp3plus_i <= 1      ~ "low",
+    stroma_percent_cd3plus_foxp3plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(CD11b_stroma.i = case_when(
+    stroma_percent_cd11b_i == 0      ~ "Absence",
+    stroma_percent_cd11b_i > 0       ~ "Presence"
+  )) %>%
+  mutate(cd11bplus_cd15plus_stroma.i = case_when(
+    stroma_percent_cd11bplus_cd15plus_i == 0      ~ "Absence",
+    stroma_percent_cd11bplus_cd15plus_i > 0       ~ "Presence"
+  )) %>% 
+  
+  mutate(cd3_total.i = case_when(
+    total_percent_cd3_i <= 1      ~ "low",
+    total_percent_cd3_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_total.i = case_when(
+    total_percent_cd3plus_cd8plus_i <= 1      ~ "low",
+    total_percent_cd3plus_cd8plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_total.i = case_when(
+    total_percent_cd3plus_foxp3plus_i <= 1      ~ "low",
+    total_percent_cd3plus_foxp3plus_i > 1       ~ "high"
+  )) %>% 
+  mutate(cd11b_total.i = case_when(
+    total_percent_cd11b_i == 0      ~ "Absence",
+    total_percent_cd11b_i > 0       ~ "Presence"
+  )) %>% 
+  mutate(cd11bplus_cd15plus_total.i = case_when(
+    total_percent_cd11bplus_cd15plus_i == 0      ~ "Absence",
+    total_percent_cd11bplus_cd15plus_i > 0       ~ "Presence"
+  )) %>% 
+  
+  
+  
+  mutate(cd3_tumor.p = case_when(
+    tumor_percent_cd3_p <= 1      ~ "low",
+    tumor_percent_cd3_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_tumor.p = case_when(
+    tumor_percent_cd3plus_cd8plus_p <= 1      ~ "low",
+    tumor_percent_cd3plus_cd8plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_tumor.p = case_when(
+    tumor_percent_cd3plus_foxp3plus_p <= 1      ~ "low",
+    tumor_percent_cd3plus_foxp3plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd11b_tumor.p = case_when(
+    tumor_percent_cd11b_p == 0      ~ "Absence",
+    tumor_percent_cd11b_p > 0       ~ "Presence"
+  )) %>% 
+  mutate(cd11bplus_cd15plus_tumor.p = case_when(
+    tumor_percent_cd11bplus_cd15plus_p == 0      ~ "Absence",
+    tumor_percent_cd11bplus_cd15plus_p > 0       ~ "Presence"
+  )) %>% 
+  
+  mutate(cd3_stroma.p = case_when(
+    stroma_percent_cd3_p <= 1      ~ "low",
+    stroma_percent_cd3_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_stroma.p = case_when(
+    stroma_percent_cd3plus_cd8plus_p <= 1      ~ "low",
+    stroma_percent_cd3plus_cd8plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_stroma.p = case_when(
+    stroma_percent_cd3plus_foxp3plus_p <= 1      ~ "low",
+    stroma_percent_cd3plus_foxp3plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(CD11b_stroma.p = case_when(
+    stroma_percent_cd11b_p == 0      ~ "Absence",
+    stroma_percent_cd11b_p > 0       ~ "Presence"
+  )) %>% 
+  mutate(cd11bplus_cd15plus_stroma.p = case_when(
+    stroma_percent_cd11bplus_cd15plus_p == 0      ~ "Absence",
+    stroma_percent_cd11bplus_cd15plus_p > 0       ~ "Presence"
+  )) %>% 
+    
+  mutate(cd3_total.p = case_when(
+    total_percent_cd3_p <= 1      ~ "low",
+    total_percent_cd3_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_cd8plus_total.p = case_when(
+    total_percent_cd3plus_cd8plus_p <= 1      ~ "low",
+    total_percent_cd3plus_cd8plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd3plus_foxp3plus_total.p = case_when(
+    total_percent_cd3plus_foxp3plus_p <= 1      ~ "low",
+    total_percent_cd3plus_foxp3plus_p > 1       ~ "high"
+  )) %>% 
+  mutate(cd11b_total.p = case_when(
+    total_percent_cd11b_p == 0      ~ "Absence",
+    total_percent_cd11b_p > 0       ~ "Presence"
+  )) %>% 
+  mutate(cd11bplus_cd15plus_total.p = case_when(
+    total_percent_cd11bplus_cd15plus_p == 0      ~ "Absence",
+    total_percent_cd11bplus_cd15plus_p > 0       ~ "Presence"
+  )) %>% 
+  
+  mutate(across(c(ends_with(".p") & contains("cd3"), 
+                  ends_with(".i") & contains("cd3")
+                  ), ~ factor(., levels = c("low","high"))
+                ))
+
+
+```
+
+
+```{r add abundance cat}
+abundance_cat <- abundance_cat1 %>% 
+  pivot_longer(cols = c(contains("total.i"), contains("total.p")), 
                names_to = "abundance_cat",
                values_to = "abundance_value") %>% 
   mutate(annotation = case_when(
-    str_detect(abundance_cat, "_i")      ~ "Intratumoral",
-    str_detect(abundance_cat, "_p")      ~ "Peripheral"
+    str_detect(abundance_cat, ".i")      ~ "Intratumoral",
+    str_detect(abundance_cat, ".p")      ~ "Peripheral"
   )) %>% 
   mutate(marker = case_when(
     str_detect(abundance_cat, "cd3plus_cd8plus")      ~ "CD3+ CD8+",
@@ -313,7 +438,7 @@ abundance_cat1 <- abundance_cat %>%
 #             by = "suid")
 
 ripley_ROI1_overall_univariate6 <- ripley_ROI1_overall_univariate4 %>% 
-  left_join(., abundance_cat1,
+  left_join(., abundance_cat,
             by = c("suid", "annotation", "marker"))
 
 # ripley_ROI1_overall_univariate6 <- ripley_ROI1_overall_univariate5 %>% 
@@ -345,13 +470,70 @@ ripley_ROI1_overall_univariate7 <- ripley_ROI1_overall_univariate6 %>%
     spatial_cat == "High" &
       abundance_value == "high"                           ~ "High/high",
     spatial_cat == "Absence"                              ~ "Absence"
-  ))
+  )) %>% 
+  ungroup()
 
 ripley_ROI1_overall_univariate_final <- ripley_ROI1_overall_univariate7 #%>%
 #   full_join(ripley_ROI1_overall_univariate6, ., 
 #             by= c("suid", "marker")) %>% 
 #   full_join(ripley_ROI1_overall_univariate7, .,
 #             by= c("suid", "marker"))
+```
+
+# Explore categories
+
+```{r}
+tbl1 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(marker == "CD3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, vitalstatus, marker, spatial_cat, abundance_spatial_cat) %>% 
+  tbl_summary(by= spatial_cat) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall() %>% 
+  modify_header(label = "**CD3+ cat**") %>%
+  modify_caption("**spatial_cat**")
+
+tbl2 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Peripheral") %>% 
+  filter(marker == "CD3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, vitalstatus, marker, spatial_cat, abundance_spatial_cat) %>% 
+  tbl_summary(by= spatial_cat) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall()
+tbl_merge(list(tbl1, tbl2), tab_spanner = c("Intratumoral", "Peripheral"))
+
+tbl1 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(marker == "CD3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, vitalstatus, marker, spatial_cat, abundance_spatial_cat) %>% 
+  tbl_summary(by= abundance_spatial_cat) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall() %>% 
+  modify_header(label = "**CD3+ cat**") %>%
+  modify_caption("**abundance_spatial_cat**")
+
+tbl2 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Peripheral") %>% 
+  filter(marker == "CD3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, vitalstatus, marker, spatial_cat, abundance_spatial_cat) %>% 
+  tbl_summary(by= abundance_spatial_cat) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall()
+tbl_merge(list(tbl1, tbl2), tab_spanner = c("Intratumoral", "Peripheral"))
+
+ripley_ROI1_overall_univariate_final %>% 
+  filter(marker == "CD3+") %>% 
+  ggplot(aes(x= spatial_cat, y= degree_of_clustering_permutation, color= race))+
+  geom_boxplot()+
+  ggtitle("spatial_cat for CD3+")+
+  facet_wrap(.~ annotation)
+
+ripley_ROI1_overall_univariate_final %>% 
+  filter(marker == "CD3+") %>% 
+  ggplot(aes(x= abundance_spatial_cat, y= degree_of_clustering_permutation, color= race))+
+  geom_boxplot()+
+  ggtitle("abundance_spatial_cat for CD3+")+
+  facet_wrap(.~ annotation)
 ```
 
 
@@ -375,6 +557,14 @@ ripley_ROI1_overall_univariate_final %>%
   ggtitle("Overall meaning cat : spatial/abundance")+
   theme_ridges()+ facet_wrap(annotation~ marker, ncol = 2)
 ```
+
+```{r}
+
+```
+
+
+
+
 
 ```{r}
 # library(survival)
@@ -421,21 +611,6 @@ ripley_ROI1_overall_univariate_final %>%
 
 ```
 
-
-
-
-
-
-
-
-<!-- # Study population - Patient characteristics -->
-
-<!-- # Immune cell spatial's distribution -->
-<!-- ```{r} -->
-<!-- bivariate_k %>%  -->
-<!--   tbl_summary -->
-
-<!-- ``` -->
 
 
 
