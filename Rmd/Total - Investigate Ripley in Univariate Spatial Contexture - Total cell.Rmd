@@ -1,5 +1,5 @@
 ---
-title: "Investigate Ripley in Univariate Spatial Contexture - Total cell - radius 125"
+title: "Investigate Ripley in Univariate Spatial Contexture - Total cell - radius 150"
 author: "Christelle Colin-Leitzinger"
 date: '`r Sys.Date()`'
 output: 
@@ -92,15 +92,15 @@ ripley_ROI1_overall_univariate <-
 ```{r subset K99R00}
 ripley_ROI1_overall_univariate3 <- ripley_ROI1_overall_univariate %>% 
   inner_join(., rois_clinical %>% 
-               select(image_tag, annotation, slide_type, site),
-            by= c("image_tag")) # %>% 
+               select(suid, image_tag, annotation, slide_type, site),
+            by= c("suid", "image_tag")) # %>% 
   # filter(image_tag %in% c(rois_clinical$image_tag)) ########## Fix ids for the patients missing a 1
 ```
 
 We use a radius of 125 and look for T cell markers
 ```{r radius filter}
 ripley_ROI1_overall_univariate3 <- ripley_ROI1_overall_univariate3 %>% 
-  filter(r == 125 & marker != "DAPI (DAPI) Positive")
+  filter(r == 150 & marker != "DAPI (DAPI) Positive")
 ```
 
 ```{r marker cleanup}
@@ -219,52 +219,34 @@ ripley_ROI1_overall_univariate_peri <- ripley_ROI1_overall_univariate4 %>%
   filter(annotation == "Peripheral") %>% 
   select(-annotation)
 
-ripley_ROI1_overall_univariate5 <- 
-  full_join(ripley_ROI1_overall_univariate_intra, 
-            ripley_ROI1_overall_univariate_peri,
-            by= c("suid", "marker", "r"),
-            suffix = c("_i", "_p"))
+# ripley_ROI1_overall_univariate5 <- 
+#   full_join(ripley_ROI1_overall_univariate_intra, 
+#             ripley_ROI1_overall_univariate_peri,
+#             by= c("suid", "marker", "r"),
+#             suffix = c("_i", "_p"))
 ```
 
-
-```{r explore summarize data}
-ripley_ROI1_overall_univariate4 %>% 
-  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= marker))+
-  geom_boxplot()+
-  theme_classic()+
-  coord_flip()+ 
-  theme(legend.position = "none")+ 
-  facet_wrap(. ~ annotation)
-
-ripley_ROI1_overall_univariate4 %>% 
-  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= marker))+
-  geom_violin()+
-  theme_classic()+
-  coord_flip()+ 
-  theme(legend.position = "none")+ 
-  facet_wrap(. ~ annotation)
-
-tbl1 <- ripley_ROI1_overall_univariate4 %>% 
-  filter(marker == "CD3+") %>% 
-  select("CD3+" = degree_of_clustering_permutation, annotation) %>% 
-  tbl_summary(by= annotation) %>% 
-  bold_labels() %>% 
-  add_p() %>% bold_p(t= .05) %>% add_overall() %>% 
-  modify_header(label = "**degree of clustering permutation**") %>%
-  modify_caption("**degree of clustering permutation** (N = {N})")
-tbl3 <- ripley_ROI1_overall_univariate4 %>% 
-  filter(marker == "CD3+ CD8+") %>% 
-  select("CD3+ CD8+" = degree_of_clustering_permutation, annotation) %>% 
-  tbl_summary(by= annotation) %>% 
-  bold_labels() %>% 
-  add_p() %>% bold_p(t= .05) %>% add_overall()
-tbl5 <- ripley_ROI1_overall_univariate4 %>% 
-  filter(marker == "CD3+ FOXP3+") %>% 
-  select("CD3+ FOXP3+" = degree_of_clustering_permutation, annotation) %>% 
-  tbl_summary(by= annotation) %>% 
-  bold_labels() %>% 
-  add_p() %>% bold_p(t= .05) %>% add_overall()
-tbl_stack(list(tbl1, tbl3, tbl5))
+<!-- We are removing patients who doesn't have at least 1 spatial value for CD3+ intratumoral.    -->
+<!-- Please can you review these patients (17 patients would be excluded) -->
+```{r, rows.print=285}
+# ripley_ROI1_overall_univariate5 <- ripley_ROI1_overall_univariate4 %>% 
+#   mutate(has_a_cd3_value = case_when(
+#     marker == "CD3+" &
+#       annotation == "Intratumoral" &
+#       !is.na(degree_of_clustering_permutation)              ~ "has value"
+#   )) %>% 
+#   group_by(suid) %>% 
+#   fill(has_a_cd3_value, .direction = "updown") %>% 
+#   ungroup() 
+# 
+# ripley_ROI1_overall_univariate5 %>% 
+#   filter(is.na(has_a_cd3_value)) %>% 
+#   select(suid, marker, annotation, theoretical_csr, degree_of_clustering_permutation)
+# 
+# 
+# 
+# ripley_ROI1_overall_univariate4 <- ripley_ROI1_overall_univariate5 %>% 
+#   filter(!is.na(has_a_cd3_value))
 ```
 
 # Add Abundance Categories / Spatial Categories
@@ -287,7 +269,9 @@ abundance_cat1 <- abundance_cat %>%
     str_detect(abundance_cat, "tumor")       ~ "Tumor",
     str_detect(abundance_cat, "stroma")      ~ "Stroma",
     str_detect(abundance_cat, "total")       ~ "Total",
-  ))
+  )) %>% 
+  
+  mutate(race = factor(race, levels= c("White", "Black")))
 
 ```
 
@@ -338,6 +322,53 @@ ripley_ROI1_overall_univariate_final <- ripley_ROI1_overall_univariate7 #%>%
 #   full_join(ripley_ROI1_overall_univariate7, .,
 #             by= c("suid", "marker"))
 ```
+
+```{r explore summarize data}
+ripley_ROI1_overall_univariate_final %>%
+  filter(compartment == "Total") %>% 
+  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= marker))+
+  geom_boxplot()+
+  theme_classic()+
+  coord_flip()+
+  theme(legend.position = "none")+
+  facet_wrap(. ~ annotation)
+
+ripley_ROI1_overall_univariate_final %>%
+  filter(compartment == "Total") %>% 
+  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= marker))+
+  geom_violin()+
+  theme_classic()+
+  coord_flip()+
+  theme(legend.position = "none")+
+  facet_wrap(. ~ annotation)
+
+tbl1 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+") %>% 
+  select("CD3+" = degree_of_clustering_permutation, annotation) %>% 
+  tbl_summary(by= annotation) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall() %>% 
+  modify_header(label = "**degree of clustering permutation**") %>%
+  modify_caption("**degree of clustering permutation** (N = {N})")
+tbl3 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ CD8+") %>% 
+  select("CD3+ CD8+" = degree_of_clustering_permutation, annotation) %>% 
+  tbl_summary(by= annotation) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall()
+tbl5 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ FOXP3+") %>% 
+  select("CD3+ FOXP3+" = degree_of_clustering_permutation, annotation) %>% 
+  tbl_summary(by= annotation) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall()
+tbl_stack(list(tbl1, tbl3, tbl5))
+```
+
+
 
 # Explore categories
 
@@ -426,7 +457,7 @@ tbl_merge(list(tbl1, tbl2), tab_spanner = c("Intratumoral", "Peripheral"))
 ripley_ROI1_overall_univariate_final %>% 
   # filter(marker == "CD3+") %>% 
   filter(compartment == "Total") %>% 
-  ggplot(aes(x= abundance_spatial_cat, y= degree_of_clustering_permutation, color= race))+
+  ggplot(aes(x= abundance_spatial_cat, y= degree_of_clustering_permutation))+
   geom_boxplot()+
   ggtitle("abundance_spatial_cat for CD3+")+
   facet_wrap(marker ~ annotation, ncol = 2)+
@@ -458,7 +489,7 @@ ripley_ROI1_overall_univariate_final %>%
   theme_ridges()+ facet_wrap(annotation~ marker, ncol = 2)
 ```
 
-# Survival
+# Survival Overall
 ## Category on Intratumoral CD3+ 
 ```{r, fig.height = 7}
 surv_data <- ripley_ROI1_overall_univariate_final %>% 
@@ -466,7 +497,7 @@ surv_data <- ripley_ROI1_overall_univariate_final %>%
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -493,7 +524,7 @@ surv_data <- ripley_ROI1_overall_univariate_final %>%
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+ CD8+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -520,7 +551,7 @@ surv_data <- ripley_ROI1_overall_univariate_final %>%
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+ FOXP3+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -540,17 +571,286 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
 ) + guides(colour = guide_legend(ncol = 1))
 ```
 
-## Category on Peripheral CD3+ 
-Remove 2 patients without peripheral data and their match 
+<!-- ## Category on Peripheral CD3+  -->
+<!-- Remove 2 patients without peripheral data and their match  -->
+<!-- ```{r, fig.height = 7} -->
+<!-- surv_data <- ripley_ROI1_overall_univariate_final %>%  -->
+<!--   filter(annotation == "Peripheral" & -->
+<!--            !str_detect(suid, paste0(remove_id, collapse = "|")) -->
+<!--          )%>%  -->
+<!--   filter(compartment == "Total") %>%  -->
+<!--   filter(marker == "CD3+") -->
+
+<!-- ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat,  -->
+<!--                    data=surv_data), -->
+<!--            title = "OS Analysis", -->
+<!--            font.main = c(20, "bold", "black"), -->
+<!--            font.x = c(18, "bold", "black"), -->
+<!--            font.y = c(18, "bold", "black"), -->
+<!--            font.legend = c(16, "black"), -->
+<!--            font.tickslab = c(16, "bold", "black"), -->
+<!--            size = 1.5, -->
+
+<!--            xlab = "Time in months", -->
+<!--            legend = "top", -->
+<!--            legend.title = "", -->
+<!--            pval = TRUE, -->
+<!--            conf.int = FALSE, -->
+<!--            # Censor -->
+<!--            censor = TRUE -->
+<!-- ) + guides(colour = guide_legend(ncol = 1)) -->
+<!-- ``` -->
+
+<!-- ## Category on Peripheral CD3+ CD8+ -->
+<!-- ```{r, fig.height = 7} -->
+<!-- surv_data <- ripley_ROI1_overall_univariate_final %>%  -->
+<!--   filter(annotation == "Peripheral" & -->
+<!--            !str_detect(suid, paste0(remove_id, collapse = "|")) -->
+<!--   ) %>% -->
+<!--   filter(compartment == "Total") %>%  -->
+<!--   filter(marker == "CD3+ CD8+") -->
+
+<!-- ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat,  -->
+<!--                    data=surv_data), -->
+<!--            title = "OS Analysis", -->
+<!--            font.main = c(20, "bold", "black"), -->
+<!--            font.x = c(18, "bold", "black"), -->
+<!--            font.y = c(18, "bold", "black"), -->
+<!--            font.legend = c(16, "black"), -->
+<!--            font.tickslab = c(16, "bold", "black"), -->
+<!--            size = 1.5, -->
+
+<!--            xlab = "Time in months", -->
+<!--            legend = "top", -->
+<!--            legend.title = "", -->
+<!--            pval = TRUE, -->
+<!--            conf.int = FALSE, -->
+<!--            # Censor -->
+<!--            censor = TRUE -->
+<!-- ) + guides(colour = guide_legend(ncol = 1)) -->
+<!-- ``` -->
+
+<!-- ## Category on Peripheral CD3+ FOXP3+ -->
+<!-- ```{r, fig.height = 7} -->
+<!-- surv_data <- ripley_ROI1_overall_univariate_final %>%  -->
+<!--   filter(annotation == "Peripheral" & -->
+<!--            !str_detect(suid, paste0(remove_id, collapse = "|")) -->
+<!--   ) %>%  -->
+<!--   filter(compartment == "Total") %>%  -->
+<!--   filter(marker == "CD3+ FOXP3+") -->
+
+<!-- ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat,  -->
+<!--                    data=surv_data), -->
+<!--            title = "OS Analysis", -->
+<!--            font.main = c(20, "bold", "black"), -->
+<!--            font.x = c(18, "bold", "black"), -->
+<!--            font.y = c(18, "bold", "black"), -->
+<!--            font.legend = c(16, "black"), -->
+<!--            font.tickslab = c(16, "bold", "black"), -->
+<!--            size = 1.5, -->
+
+<!--            xlab = "Time in months", -->
+<!--            legend = "top", -->
+<!--            legend.title = "", -->
+<!--            pval = TRUE, -->
+<!--            conf.int = FALSE, -->
+<!--            # Censor -->
+<!--            censor = TRUE -->
+<!-- ) + guides(colour = guide_legend(ncol = 1)) -->
+<!-- ``` -->
+
+# HR
+```{r}
+tbl1 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+") 
+tbl1 <- tbl1 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, race, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl1$timelastfu,
+                             event = tbl1$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+tbl2 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ CD8+")
+tbl2 <- tbl2 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, race, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl2$timelastfu,
+                             event = tbl2$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+
+tbl3 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ FOXP3+")
+tbl3 <- tbl3 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, race, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl3$timelastfu,
+                             event = tbl3$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+
+tbl_merge(list(tbl1, tbl2, tbl3), tab_spanner = c("CD3+ cat", "CD3+ CD8+ cat", "**CD3+ FOXP3+ cat**"))
+```
+
+
+# By Race
+## Explore makers
+```{r explore summarize data by race}
+ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= race))+
+  ggtitle("Intratumoral")+
+  geom_boxplot()+
+  theme_classic()+
+  coord_flip()+
+  theme(legend.position = "none")+
+  facet_wrap(. ~ marker)
+
+ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  ggplot(aes(x= marker, y= degree_of_clustering_permutation, color= race))+
+  ggtitle("Intratumoral")+
+  geom_violin()+
+  theme_classic()+
+  coord_flip()+
+  theme(legend.position = "none")+
+  facet_wrap(. ~ marker)
+
+tbl1 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(marker == "CD3+") %>% 
+  select("CD3+" = degree_of_clustering_permutation, race) %>% 
+  tbl_summary(by= race) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall() %>% 
+  modify_header(label = "**degree of clustering permutation**") %>%
+  modify_caption("**degree of clustering permutation** (N = {N})")
+tbl3 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(marker == "CD3+ CD8+") %>% 
+  select("CD3+ CD8+" = degree_of_clustering_permutation, race) %>% 
+  tbl_summary(by= race) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall()
+tbl5 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(marker == "CD3+ FOXP3+") %>% 
+  select("CD3+ FOXP3+" = degree_of_clustering_permutation, race) %>% 
+  tbl_summary(by= race) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(t= .05) %>% add_overall()
+tbl_stack(list(tbl1, tbl3, tbl5))
+```
+
+
+
+# Explore categories
+
+```{r tables categories by race}
+tbl1 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, 
+         histotype, dblkstat_treat, 
+         vitalstatus, marker, abundance_spatial_cat) %>% 
+  tbl_summary(by= race,
+              type = list(dblkstat_treat ~ "categorical")) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall()
+
+tbl2 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ CD8+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, 
+         histotype, dblkstat_treat, 
+         vitalstatus, marker, abundance_spatial_cat) %>% 
+  tbl_summary(by= race,
+              type = list(dblkstat_treat ~ "categorical")) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall()
+
+
+tbl3 <- ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ FOXP3+") %>% 
+  select(degree_of_clustering_permutation, refage, race, stage, 
+         histotype, dblkstat_treat, 
+         vitalstatus, marker, abundance_spatial_cat) %>% 
+  tbl_summary(by= race,
+              type = list(dblkstat_treat ~ "categorical")) %>% 
+  bold_labels() %>% 
+  add_p() %>% bold_p(.05) %>% add_overall()
+
+tbl_merge(list(tbl1, tbl2, tbl3), tab_spanner = c("CD3+ cat", "CD3+ CD8+ cat", "**CD3+ FOXP3+ cat**"))
+```
+
+
+```{r boxplot categories by race, fig.width=12, fig.height=9}
+ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  ggplot(aes(x= abundance_spatial_cat, y= degree_of_clustering_permutation, color= race))+
+  geom_boxplot()+
+  ggtitle("abundance_spatial_cat")+
+  facet_wrap(marker ~ ., ncol = 2)+
+  coord_flip()
+```
+
+
+```{r ggridge by race, fig.width=12, fig.height=10}
+library(ggridges)
+ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  select(abundance_spatial_cat, race, marker, degree_of_clustering_permutation) %>% 
+
+  ggplot(aes(y=marker, x=degree_of_clustering_permutation,  fill=abundance_spatial_cat, linetype = race
+             )) +
+  geom_density_ridges(alpha=0.5) +
+  ggtitle("Overall")+
+  theme_ridges()+ 
+  facet_wrap(~ race, ncol = 2)
+
+ripley_ROI1_overall_univariate_final %>% 
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  select(abundance_spatial_cat, race, marker, degree_of_clustering_permutation) %>% 
+
+  ggplot(aes(y=abundance_spatial_cat, x=degree_of_clustering_permutation,  fill=abundance_spatial_cat, linetype = race
+             )) +
+  geom_density_ridges(alpha=0.5) +
+  ggtitle("Overall meaning cat : spatial/abundance")+
+  theme_ridges()+ facet_wrap(race~ marker, ncol = 2)
+```
+
+# Survival
+## Category on Intratumoral CD3+ 
 ```{r, fig.height = 7}
 surv_data <- ripley_ROI1_overall_univariate_final %>% 
-  filter(annotation == "Peripheral" &
-           !str_detect(suid, paste0(remove_id, collapse = "|"))
-         )%>% 
+  filter(annotation == "Intratumoral") %>% 
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat + race, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -563,6 +863,7 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
            xlab = "Time in months",
            legend = "top",
            legend.title = "",
+           linetype = "race",
            pval = TRUE,
            conf.int = FALSE,
            # Censor
@@ -570,16 +871,14 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
 ) + guides(colour = guide_legend(ncol = 1))
 ```
 
-## Category on Peripheral CD3+ CD8+
+## Category on Intratumoral CD3+ CD8+
 ```{r, fig.height = 7}
 surv_data <- ripley_ROI1_overall_univariate_final %>% 
-  filter(annotation == "Peripheral" &
-           !str_detect(suid, paste0(remove_id, collapse = "|"))
-  ) %>%
+  filter(annotation == "Intratumoral") %>% 
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+ CD8+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat + race, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -592,6 +891,7 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
            xlab = "Time in months",
            legend = "top",
            legend.title = "",
+           linetype = "race",
            pval = TRUE,
            conf.int = FALSE,
            # Censor
@@ -599,16 +899,14 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
 ) + guides(colour = guide_legend(ncol = 1))
 ```
 
-## Category on Peripheral CD3+ FOXP3+
+## Category on Intratumoral CD3+ FOXP3+
 ```{r, fig.height = 7}
 surv_data <- ripley_ROI1_overall_univariate_final %>% 
-  filter(annotation == "Peripheral" &
-           !str_detect(suid, paste0(remove_id, collapse = "|"))
-  ) %>% 
+  filter(annotation == "Intratumoral") %>% 
   filter(compartment == "Total") %>% 
   filter(marker == "CD3+ FOXP3+")
 
-ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat, 
+ggsurvplot(survfit(Surv(timeint_fu, os_event) ~ abundance_spatial_cat + race, 
                    data=surv_data),
            title = "OS Analysis",
            font.main = c(20, "bold", "black"),
@@ -621,6 +919,7 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
            xlab = "Time in months",
            legend = "top",
            legend.title = "",
+           linetype = "race",
            pval = TRUE,
            conf.int = FALSE,
            # Censor
@@ -628,59 +927,112 @@ ggsurvplot(survfit(Surv(os_time, os_event) ~ abundance_spatial_cat,
 ) + guides(colour = guide_legend(ncol = 1))
 ```
 
+## HR stratified by Race
+### White
 ```{r}
-# library(survival)
-# 
-# tbl1 <- ripley_ROI1_overall_univariate_final %>% 
-#   select(vitalstatus, timelastfu,
-#          spat_CD11_i,
-#          refage, race, stage) %>%
-#   tbl_uvregression(method = survival::coxph,
-#                    y = (Surv(time = ripley_ROI1_overall_univariate_final$timelastfu,
-#                              event = ripley_ROI1_overall_univariate_final$vitalstatus)),
-#                    exponentiate = TRUE) %>%
-#   bold_labels() %>% italicize_levels() %>%
-#   bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
-# tbl2 <-
-#   coxph(Surv(time = ripley_ROI1_overall_univariate_final$timelastfu,
-#              event = ripley_ROI1_overall_univariate_final$vitalstatus) ~
-#           spat_CD11_i + refage + stage,
-#         data =  ripley_ROI1_overall_univariate_final) %>%
-#   tbl_regression(exponentiate = TRUE) %>%
-#   bold_p(t = .05) %>%
-#   add_nevent(location = "level") %>% add_n(location = "level")
-# tbl_merge(list(tbl1, tbl2), tab_spanner = c("**Univariable**", "**Multivariable**"))
-# 
-# tbl1 <- ripley_ROI1_overall_univariate_final %>% 
-#   select(vitalstatus, timelastfu,
-#          spat_CD3_i,
-#          refage, race, stage) %>%
-#   tbl_uvregression(method = survival::coxph,
-#                    y = (Surv(time = ripley_ROI1_overall_univariate_final$timelastfu,
-#                              event = ripley_ROI1_overall_univariate_final$vitalstatus)),
-#                    exponentiate = TRUE) %>%
-#   bold_labels() %>% italicize_levels() %>%
-#   bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
-# tbl2 <-
-#   coxph(Surv(time = ripley_ROI1_overall_univariate_final$timelastfu,
-#              event = ripley_ROI1_overall_univariate_final$vitalstatus) ~
-#           spat_CD3_i + refage + stage,
-#         data =  ripley_ROI1_overall_univariate_final) %>%
-#   tbl_regression(exponentiate = TRUE) %>%
-#   bold_p(t = .05) %>%
-#   add_nevent(location = "level") %>% add_n(location = "level")
-# tbl_merge(list(tbl1, tbl2), tab_spanner = c("**Univariable**", "**Multivariable**"))
+tbl1 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+") %>% 
+  filter(race == "White")
+tbl1 <- tbl1 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl1$timelastfu,
+                             event = tbl1$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+tbl2 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ CD8+") %>% 
+  filter(race == "White")
+tbl2 <- tbl2 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl2$timelastfu,
+                             event = tbl2$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+
+tbl3 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ FOXP3+") %>% 
+  filter(race == "White")
+tbl3 <- tbl3 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl3$timelastfu,
+                             event = tbl3$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+
+tbl_merge(list(tbl1, tbl2, tbl3), tab_spanner = c("CD3+ cat", "CD3+ CD8+ cat", "**CD3+ FOXP3+ cat**"))
 
 ```
 
+### Black
+```{r}
+tbl1 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+") %>% 
+  filter(race == "Black")
+tbl1 <- tbl1 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl1$timelastfu,
+                             event = tbl1$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
+tbl2 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ CD8+") %>% 
+  filter(race == "Black")
+tbl2 <- tbl2 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl2$timelastfu,
+                             event = tbl2$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
 
+tbl3 <- ripley_ROI1_overall_univariate_final %>%
+  filter(annotation == "Intratumoral") %>% 
+  filter(compartment == "Total") %>% 
+  filter(marker == "CD3+ FOXP3+") %>% 
+  filter(race == "Black")
+tbl3 <- tbl3 %>% 
+  select(os_event, timelastfu,
+         abundance_spatial_cat,
+         refage, stage) %>%
+  tbl_uvregression(method = survival::coxph,
+                   y = (Surv(time = tbl3$timelastfu,
+                             event = tbl3$os_event)),
+                   exponentiate = TRUE) %>%
+  bold_labels() %>% italicize_levels() %>%
+  bold_p(t = .05) %>% add_nevent(location = "level") %>% add_n(location = "level")
 
+tbl_merge(list(tbl1, tbl2, tbl3), tab_spanner = c("CD3+ cat", "CD3+ CD8+ cat", "**CD3+ FOXP3+ cat**"))
 
-
-
-
-
-
+```
 
 
 

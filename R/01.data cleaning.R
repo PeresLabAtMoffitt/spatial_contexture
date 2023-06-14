@@ -4,9 +4,8 @@ library(tidyverse)
 
 # Load data
 tar_load(KNN_ROI1_overall_univariate)
-# tar_load(C_ROI1_overall_univariate)
 tar_load(C_ROI1_overall_univariate)
-# tar_load(C_ROI1_overall_univariate)
+tar_load(C_ROI1_tumor_univariate)
 
 
 # Clean names and missing
@@ -50,5 +49,7 @@ write_rds(KNN_ROI1_overall_univariate, "knn_ROI1_overall_univariate.rds")
 C_ROI1_overall_univariate <- clean_data(C_ROI1_overall_univariate)
 write_rds(C_ROI1_overall_univariate, "c_ROI1_overall_univariate.rds")
 
+C_ROI1_tumor_univariate <- clean_data(C_ROI1_tumor_univariate)
+write_rds(C_ROI1_tumor_univariate, "c_ROI1_tumor_univariate.rds")
 
 # END Cleaning
